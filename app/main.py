@@ -3,6 +3,7 @@ from app.routers import routers
 from app.core.error_handlers import inventory_exception_handler,sqlalchemy_exception_handler,general_exception_handler
 from app.core.exceptions import InventoryError
 from sqlalchemy.exc import SQLAlchemyError
+from app.middlewares.logging import LoggingMiddleware
 
 # Create FastAPI app
 app = FastAPI(
@@ -10,6 +11,8 @@ app = FastAPI(
     description="API for managing inventory across multiple locations",
     version="1.0.0"
 )
+
+app.add_middleware(LoggingMiddleware)
 app.add_exception_handler(InventoryError, inventory_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
