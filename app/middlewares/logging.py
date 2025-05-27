@@ -2,7 +2,7 @@ import sys
 import logging
 import time
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Callable
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
@@ -39,10 +39,19 @@ def default_log_handler(log_data: RequestLogData):
         f"Duration: {log_data.duration_ms}ms"
     )
 
+
 class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    def __init__(
+            self,
+            app,
+            log_handler: Optional[Callable[[RequestLogData], None]] = None):
+        super().__init__(app)
+        self.log_handler = log_handler or default_log_handler
+
+    async def dispatch(self, request: Request, call_next):
         start_time = time.perf_counter_ns()
         request_id = str(uuid.uuid4())
+
         response = await call_next(request)
 
         process_time_ms = round((time.perf_counter_ns() - start_time) / 1_000_000, 2)
@@ -51,15 +60,15 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         response.headers["X-Request-ID"] = request_id
 
         log_data = RequestLogData(
-            timestamp = datetime.now(),
-            request_id = request_id,
-            method = request.method,
-            path = request.url.path,
-            status_code = response.status_code,
-            duration_ms = process_time_ms,
-            client_ip = request.client.host if request.client else None,
-            user_agent = request.headers.get("user-agent", "")
+            timestamp=datetime.now(),
+            request_id=request_id,
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration_ms=process_time_ms,
+            client_ip=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent", "")
         )
-        default_log_handler(log_data)
-        return  response
+        self.log_handler(log_data)
+        return response
 

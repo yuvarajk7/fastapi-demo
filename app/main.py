@@ -3,7 +3,8 @@ from app.routers import routers
 from app.core.error_handlers import inventory_exception_handler,sqlalchemy_exception_handler,general_exception_handler
 from app.core.exceptions import InventoryError
 from sqlalchemy.exc import SQLAlchemyError
-from app.middlewares.logging import LoggingMiddleware
+from app.middlewares.logging import LoggingMiddleware,RequestLogData
+from app.core.logging import LoggerFactory
 
 # Create FastAPI app
 app = FastAPI(
@@ -12,7 +13,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
-app.add_middleware(LoggingMiddleware)
+console_logger = LoggerFactory.create_console_logger()
+file_logger = LoggerFactory.create_file_logger(file_path="logs/api_requests.log")
+
+def custom_log_handler(log_data: RequestLogData):
+    log_message = (
+        f"{log_data.method} {log_data.path} - "
+        f"ID: {log_data.request_id} - "
+        f"Status: {log_data.status_code} - "
+        f"IP: {log_data.client_ip} - "
+        f"UA: {log_data.user_agent} - "
+        f"Duration: {log_data.duration_ms}ms"
+    )
+    console_logger.info(log_message)
+    file_logger.info(log_message)
+
+app.add_middleware(LoggingMiddleware,log_handler=custom_log_handler)
 app.add_exception_handler(InventoryError, inventory_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
