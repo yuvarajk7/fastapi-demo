@@ -5,10 +5,12 @@ from app.crud.product import product_repository
 from app.schemas.product import ProductCreate,ProductResponse
 from app.core.responses import not_found
 from typing import Optional,List
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(
     prefix="/products",
-    tags=["Products"]
+    tags=["Products"],
+    dependencies=[Depends(get_current_user())]
 )
 
 @router.get(

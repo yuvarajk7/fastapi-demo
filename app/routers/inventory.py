@@ -6,6 +6,7 @@ from app.db.session import get_db
 from app.crud.inventory import inventory_repository
 from app.crud.product import product_repository
 from app.crud.location import location_repository
+from app.dependencies.auth import get_current_user
 from app.schemas.inventory import (
     InventoryUpdate, 
     InventoryItemResponse, 
@@ -16,7 +17,8 @@ from app.core.responses import not_found
 
 router = APIRouter(
     prefix="/inventory",
-    tags=["Inventory"]
+    tags=["Inventory"],
+    dependencies=[Depends(get_current_user(['admin', 'inventory_manager']))]
 )
 
 
