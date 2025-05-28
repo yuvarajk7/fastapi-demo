@@ -27,6 +27,10 @@ class VersioningMiddleware(BaseHTTPMiddleware):
 
         version = "1"  # Default to v1
 
+        api_version = request.headers.get("API-Version")
+        if api_version:
+            version = api_version
+
         # Rewrite path with appropriate version prefix
         request.scope["path"] = f"/v{version}" + path
 
