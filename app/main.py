@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Depends
 
 from app.middlewares.authentication import JWTAuthenticationMiddleware
-from app.routers import routers
+from app.routers.v1 import v1_routers
+from app.routers.v2 import v2_routers
 from app.core.error_handlers import (inventory_exception_handler,sqlalchemy_exception_handler,general_exception_handler,
                                      user_exception_handler)
 from app.core.exceptions import InventoryError, UserError
@@ -41,8 +42,11 @@ app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(UserError, user_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
-for router in routers:
-    app.include_router(router)
+for router in v1_routers:
+    app.include_router(router,prefix="/v1")
+
+for router in v2_routers:
+    app.include_router(router,prefix="/v2")
 
 @app.get("/health", tags=["Health"])
 async def health_check():

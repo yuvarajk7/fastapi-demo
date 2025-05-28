@@ -1,6 +1,7 @@
 # app/schemas/inventory.py
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
+from enum import Enum
 
 class InventoryItemResponse(BaseModel):
     product_id: int = Field(..., description="ID of the product")
@@ -92,6 +93,84 @@ class InventoryLocationProductResponse(BaseModel):
                 "location_id": 1,
                 "in_stock": True,
                 "needs_reorder": False
+            }
+        }
+    }
+
+
+# New V2 enum for operation type
+class InventoryOperationType(str, Enum):
+    """Operation types for inventory updates in V2 API"""
+    INCREMENT = "increment"
+    DECREMENT = "decrement"
+    SET = "set"
+
+
+# New V2 model with operation-based approach
+class InventoryUpdateV2(BaseModel):
+    """
+    Schema for updating inventory stock levels (V2 - operation based)
+
+    This version uses explicit operations rather than positive/negative values
+    to make inventory changes more explicit and prevent errors.
+    """
+    product_id: int = Field(..., gt=0, description="ID of the product to update")
+    location_id: int = Field(..., gt=0, description="ID of the storage location")
+    operation: InventoryOperationType = Field(
+        ...,
+        description="Type of inventory operation to perform"
+    )
+    value: int = Field(
+        ...,
+        gt=0,
+        description="The value to apply based on the operation type"
+    )
+    reorder_point: Optional[int] = Field(
+        None,
+        ge=0,
+        description="Optional new reorder threshold"
+    )
+    reason: Optional[str] = Field(
+        None,
+        description="Explanation for the inventory change, required for large changes"
+    )
+
+    @field_validator('value')
+    def validate_value(cls, v):
+        """Validate value is reasonable"""
+        if v > 100000:
+            raise ValueError('Value cannot exceed 100000 units in a single operation')
+        return v
+
+    @model_validator(mode='after')
+    def validate_operations(self):
+        """Validate business rules based on operation type"""
+        # For DECREMENT operations, apply special validations
+        if self.operation == InventoryOperationType.DECREMENT:
+            # Require reason for significant decrements
+            if self.value > 50 and not self.reason:
+                raise ValueError('Stock reductions of more than 50 units require a reason')
+
+            # Require detailed reason for large decrements
+            if self.value > 200 and (not self.reason or len(self.reason) < 20):
+                raise ValueError('Reductions of more than 200 units require a detailed reason (at least 20 characters)')
+
+        # For any large change, require a reason
+        elif self.operation in [InventoryOperationType.INCREMENT, InventoryOperationType.SET]:
+            if self.value > 500 and not self.reason:
+                raise ValueError('Large inventory changes (>500 units) require a reason')
+
+        return self
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "product_id": 1,
+                "location_id": 5,
+                "operation": "increment",
+                "value": 10,
+                "reorder_point": 20,
+                "reason": "Received weekly shipment"
             }
         }
     }
