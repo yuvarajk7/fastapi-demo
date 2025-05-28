@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inventory App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="script.js" defer></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <nav class="bg-white shadow p-4 flex justify-between items-center">
+    <div class="flex gap-4">
+      <a href="index.html" class="text-blue-600 hover:underline">Home</a>
+      <a href="products.html" class="hover:underline">Products</a>
+      <a href="locations.html" class="hover:underline">Locations</a>
+      <a href="ratelimit.html" class="hover:underline">Rate Limit </a>
+
+    </div>
+    <div id="user-info"></div>
+  </nav>
+  <main class="p-4">
+    <h1 class="text-2xl font-bold mb-4">Welcome to Inventory UI</h1>
+    <div id="home" class="space-y-2"></div>
+  </main>
+</body>
+</html>
+<script>document.getElementById("home").innerText = "Use the menu to view products, locations, or inventory.";</script>

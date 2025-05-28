@@ -15,6 +15,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
+
 load_dotenv()
 
 console_logger = LoggerFactory.create_console_logger()
@@ -72,6 +74,13 @@ def custom_log_handler(log_data: RequestLogData):
     console_logger.info(log_message)
     file_logger.info(log_message)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8080"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(VersioningMiddleware)
 app.add_middleware(LoggingMiddleware,log_handler=custom_log_handler)
 app.add_middleware(JWTAuthenticationMiddleware)
