@@ -1,13 +1,21 @@
 # app/tests/test_inventory.py
 
 from fastapi.testclient import TestClient
+
+from app.dependencies.auth import get_authenticated_user
 from app.main import app
+from app.middlewares.authentication import AuthenticatedUser
 from app.tests.test_session import initialize_test_db, get_test_db
 from app.tests.test_session import get_test_db
 from app.db.session import get_db
 
 # Initialize the test database (drop + create + seed)
 initialize_test_db()
+
+mock_admin = AuthenticatedUser(id="1", email="admin@test.com", roles=["admin"])
+# since we mock the auth user no need to generate token
+app.dependency_overrides[get_authenticated_user] = lambda : mock_admin
+
 app.dependency_overrides[get_db] = get_test_db
 
 client = TestClient(app)
@@ -21,7 +29,7 @@ def get_token(email: str, password: str) -> str:
 
 def test_inventory_update_add_stock():
     """Test adding stock with a valid admin user."""
-    token = get_token("admintest@globomantics.com", "password")
+    #token = get_token("admintest@globomantics.com", "password")
 
     payload = {
         "product_id": 1,
@@ -32,8 +40,8 @@ def test_inventory_update_add_stock():
 
     response = client.put(
         "/inventory/",
-        json=payload,
-        headers={"Authorization": f"Bearer {token}"}
+        json=payload
+        #headers={"Authorization": f"Bearer {token}"}
     )
 
     assert response.status_code == 200

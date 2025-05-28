@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.crud.location import location_repository
+from app.dependencies.auth import get_authenticated_user
 from app.schemas.location import LocationCreate,LocationResponse
 from app.core.responses import not_found
 from typing import List, Optional
@@ -10,7 +11,8 @@ from typing import List, Optional
 
 router = APIRouter(
     prefix="/locations",
-    tags=["Locations"]
+    tags=["Locations"],
+    dependencies=[Depends(get_authenticated_user())]
 )
 
 @router.get(

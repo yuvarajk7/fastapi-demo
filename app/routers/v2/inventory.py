@@ -9,12 +9,12 @@ from app.schemas.inventory import (
     InventoryUpdateV2,
     InventoryOperationType
 )
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import require_roles
 
 router = APIRouter(
     prefix="/inventory",
     tags=["Inventory"],
-    dependencies=[Depends(get_current_user())]
+    dependencies=[Depends(require_roles(['admin','inventory_manager']))]
 )
 
 
