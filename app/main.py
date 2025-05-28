@@ -11,17 +11,54 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.middlewares.logging import LoggingMiddleware,RequestLogData
 from app.core.logging import LoggerFactory
 from app.dependencies.auth import ensure_bearer
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+from contextlib import asynccontextmanager
+load_dotenv()
+
+console_logger = LoggerFactory.create_console_logger()
+file_logger = LoggerFactory.create_file_logger(file_path="logs/api_requests.log")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    os.makedirs("./uploads", exist_ok=True)
+    os.makedirs("./temp", exist_ok=True)
+    required_vars = ["DATABASE_URL"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+
+    if missing_vars:
+        for var in missing_vars:
+            file_logger.error(f"Missing required environment variable: {var}")
+        raise SystemExit("Application startup failed")
+
+    file_logger.info("Configuration validation successful")
+
+    yield  # Application runs during this yield
+
+    file_logger.info("Application shutting down...")
+
+    # Clean up temporary files
+    temp_dir = Path("./temp")
+    file_count = len(list(temp_dir.glob("*")))
+
+    if file_count > 0:
+        file_logger.info(f"Removing {file_count} temporary files")
+        for file in temp_dir.glob("*"):
+            if file.is_file():
+                file.unlink()
+
+    file_logger.info("Temporary files cleaned up")
+    file_logger.info("Shutdown complete")
 
 # Create FastAPI app
 app = FastAPI(
     title="Inventory Management API",
     description="API for managing inventory across multiple locations",
     version="1.0.0",
-    dependencies=[Depends(ensure_bearer)]
+    dependencies=[Depends(ensure_bearer)],
+    lifespan=lifespan
 )
-
-console_logger = LoggerFactory.create_console_logger()
-file_logger = LoggerFactory.create_file_logger(file_path="logs/api_requests.log")
 
 def custom_log_handler(log_data: RequestLogData):
     log_message = (
