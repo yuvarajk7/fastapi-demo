@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 
 from app.middlewares.authentication import JWTAuthenticationMiddleware
 from app.middlewares.version import VersioningMiddleware
@@ -16,8 +16,19 @@ from pathlib import Path
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi import Limiter
 
 load_dotenv()
+
+def key_func(request: Request):
+    user = getattr(request.state, "user", None)
+    if user and hasattr(user, "id"):
+        return str(user.id)
+    return get_remote_address(request)
+
+limiter = Limiter(key_func=key_func, default_limits=["10/minute"])
 
 console_logger = LoggerFactory.create_console_logger()
 file_logger = LoggerFactory.create_file_logger(file_path="logs/api_requests.log")
@@ -62,6 +73,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.state.limiter = limiter
+
 def custom_log_handler(log_data: RequestLogData):
     log_message = (
         f"{log_data.method} {log_data.path} - "
@@ -84,6 +97,7 @@ app.add_middleware(
 app.add_middleware(VersioningMiddleware)
 app.add_middleware(LoggingMiddleware,log_handler=custom_log_handler)
 app.add_middleware(JWTAuthenticationMiddleware)
+app.add_middleware(SlowAPIMiddleware) #should be next to auth middleware
 
 app.add_exception_handler(InventoryError, inventory_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
