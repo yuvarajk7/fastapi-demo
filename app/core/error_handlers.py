@@ -3,7 +3,19 @@ from fastapi.responses import JSONResponse
 
 from app.core.exceptions import InventoryError
 from sqlalchemy.exc import SQLAlchemyError
+from app.core.exceptions import UserError
 
+async def user_exception_handler(request: Request, exc: UserError):
+    """Handler for user-related exceptions"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": True,
+            "message": exc.message,
+            "error_code": exc.error_code,
+            "details": exc.details
+        }
+    )
 
 async def inventory_exception_handler(request: Request, exc: InventoryError):
     """Handler for our custom inventory exceptions"""
@@ -15,6 +27,7 @@ async def inventory_exception_handler(request: Request, exc: InventoryError):
             "details": exc.details
         }
     )
+
 async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
     """Handler for SQLAlchemy database errors"""
     # Log the full exception details for debugging

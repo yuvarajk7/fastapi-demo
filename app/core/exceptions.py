@@ -32,3 +32,14 @@ class InsufficientStockError(InventoryError):
             "available": available
         }
         super().__init__(message, details)
+
+
+class UserError(Exception):
+    """Base exception class for user operations"""
+    status_code = 400  # Default status code
+
+    def __init__(self, message: str, error_code: str = None, details: dict = None):
+        self.message = message
+        self.error_code = error_code
+        self.details = details or {}
+        super().__init__(self.message)

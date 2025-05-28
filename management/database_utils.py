@@ -1,11 +1,12 @@
 import sys
 import sqlalchemy as sa
 from sqlalchemy.exc import SQLAlchemyError
+from app.core.security import get_password_hash
 
 # Import from app
 from app.db.session import engine, SessionLocal, Base
 from app.db import init_db
-from app.crud import product_repository, location_repository, inventory_repository
+from app.crud import product_repository, location_repository, inventory_repository, user_repository,role_repository
 
 
 def check_database_exists():
@@ -170,7 +171,61 @@ def create_sample_data(force_recreate=False):
             quantity_change=2,
             reorder_point=5
         )
-        
+
+        # Create sample roles
+        print("Creating user roles...")
+        admin_role = role_repository.create(
+            db=db,
+            name="admin",
+            description="Administrator with full access to all features"
+        )
+
+        inventory_manager_role = role_repository.create(
+            db=db,
+            name="inventory_manager",
+            description="Can manage inventory levels and locations"
+        )
+
+        sales_clerk_role = role_repository.create(
+            db=db,
+            name="sales_clerk",
+            description="Can view inventory and process sales"
+        )
+
+        password_hash = get_password_hash("password")
+
+        # Create sample users
+        print("Creating sample users...")
+        admin_user = user_repository.create(
+            db=db,
+            first_name="Super",
+            last_name="Admin",
+            email="admin@globomantics.com",
+            password=password_hash
+        )
+
+        manager_user = user_repository.create(
+            db=db,
+            first_name="Inventory",
+            last_name="Manager",
+            email="inventory@globomantics.com",
+            password=password_hash
+        )
+
+        clerk_user = user_repository.create(
+            db=db,
+            first_name="Sales",
+            last_name="Clerk",
+            email="clerk@globomantics.com",
+            password=password_hash
+        )
+
+        # Assign roles to users
+        print("Assigning roles to users...")
+        user_repository.update_roles(db, admin_user.id, [admin_role.id])
+        user_repository.update_roles(db, manager_user.id, [inventory_manager_role.id])
+        user_repository.update_roles(db, clerk_user.id, [sales_clerk_role.id])
+
         print("Sample data created successfully.")
         return True
         

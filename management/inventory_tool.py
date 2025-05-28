@@ -13,7 +13,8 @@ from management.views import (
     view_inventory_by_location,
     view_low_stock_items,
     search_products,
-    update_stock_menu
+    update_stock_menu,
+    view_all_users
 )
 
 
@@ -61,9 +62,10 @@ def main_menu():
         print("5. View low stock items")
         print("6. Search products")
         print("7. Update stock")
+        print("8. View all users")
         print("-" * 30)
-        print("8. Initialize database")
-        print("9. Create sample data")
+        print("9. Initialize database")
+        print("10. Create sample data")
         print("0. Exit")
         
         choice = input("\nEnter your choice: ")
@@ -91,6 +93,9 @@ def main_menu():
             update_stock_menu()
         elif choice == "8":
             clear_screen()
+            view_all_users()
+        elif choice == "9":
+            clear_screen()
             display_title()
             print("Database Initialization")
             print("======================")
@@ -106,7 +111,7 @@ def main_menu():
                 init_database()
                 
             input("\nPress Enter to continue...")
-        elif choice == "9":
+        elif choice == "10":
             clear_screen()
             display_title()
             print("Creating Sample Data")

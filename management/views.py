@@ -1,7 +1,7 @@
 from tabulate import tabulate
 
 from app.db.session import SessionLocal
-from app.crud import product_repository, location_repository, inventory_repository
+from app.crud import product_repository, location_repository, inventory_repository, user_repository
 
 
 def view_all_products():
@@ -301,6 +301,45 @@ def search_products():
     
     input("\nPress Enter to continue...")
 
+
+def view_all_users():
+    """Display all users in a formatted table"""
+    db = SessionLocal()
+    try:
+        users = user_repository.get_all(db)
+
+        if not users:
+            print("No users found in the database.")
+            return
+
+        # Format data for tabulate
+        headers = ["Name", "Email", "Roles"]
+        table_data = []
+
+        for user in users:
+            # Format name
+            full_name = f"{user.first_name} {user.last_name}"
+
+            # Get roles
+            role_names = [role.name for role in user.roles]
+            roles_str = ", ".join(role_names) if role_names else "None"
+
+            table_data.append([
+                full_name,
+                user.email,
+                roles_str
+            ])
+
+        # Print table
+        print("\n" + tabulate(table_data, headers=headers, tablefmt="grid"))
+        print(f"\nTotal: {len(users)} users")
+
+    except Exception as e:
+        print(f"Error viewing users: {e}")
+    finally:
+        db.close()
+
+    input("\nPress Enter to continue...")
 
 def update_stock_menu():
     """Menu to update stock for a product at a location"""

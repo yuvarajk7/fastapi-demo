@@ -1,16 +1,19 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from app.routers import routers
-from app.core.error_handlers import inventory_exception_handler,sqlalchemy_exception_handler,general_exception_handler
-from app.core.exceptions import InventoryError
+from app.core.error_handlers import (inventory_exception_handler,sqlalchemy_exception_handler,general_exception_handler,
+                                     user_exception_handler)
+from app.core.exceptions import InventoryError, UserError
 from sqlalchemy.exc import SQLAlchemyError
 from app.middlewares.logging import LoggingMiddleware,RequestLogData
 from app.core.logging import LoggerFactory
+from app.dependencies.auth import ensure_bearer
 
 # Create FastAPI app
 app = FastAPI(
     title="Inventory Management API",
     description="API for managing inventory across multiple locations",
-    version="1.0.0"
+    version="1.0.0",
+    dependencies=[Depends(ensure_bearer)]
 )
 
 console_logger = LoggerFactory.create_console_logger()
@@ -31,13 +34,11 @@ def custom_log_handler(log_data: RequestLogData):
 app.add_middleware(LoggingMiddleware,log_handler=custom_log_handler)
 app.add_exception_handler(InventoryError, inventory_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
+app.add_exception_handler(UserError, user_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
 for router in routers:
     app.include_router(router)
-
-
-
 
 @app.get("/health", tags=["Health"])
 async def health_check():
