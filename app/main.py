@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 
 from app.middlewares.authentication import JWTAuthenticationMiddleware
+from app.middlewares.version import VersioningMiddleware
 from app.routers.v1 import v1_routers
 from app.routers.v2 import v2_routers
 from app.core.error_handlers import (inventory_exception_handler,sqlalchemy_exception_handler,general_exception_handler,
@@ -34,6 +35,7 @@ def custom_log_handler(log_data: RequestLogData):
     console_logger.info(log_message)
     file_logger.info(log_message)
 
+app.add_middleware(VersioningMiddleware)
 app.add_middleware(LoggingMiddleware,log_handler=custom_log_handler)
 app.add_middleware(JWTAuthenticationMiddleware)
 
