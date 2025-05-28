@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Depends
+
+from app.middlewares.authentication import JWTAuthenticationMiddleware
 from app.routers import routers
 from app.core.error_handlers import (inventory_exception_handler,sqlalchemy_exception_handler,general_exception_handler,
                                      user_exception_handler)
@@ -32,6 +34,8 @@ def custom_log_handler(log_data: RequestLogData):
     file_logger.info(log_message)
 
 app.add_middleware(LoggingMiddleware,log_handler=custom_log_handler)
+app.add_middleware(JWTAuthenticationMiddleware)
+
 app.add_exception_handler(InventoryError, inventory_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(UserError, user_exception_handler)
