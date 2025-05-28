@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi import Limiter
+from Secweb import SecWeb
 
 load_dotenv()
 
@@ -72,6 +73,14 @@ app = FastAPI(
     dependencies=[Depends(ensure_bearer)],
     lifespan=lifespan
 )
+
+# Check if we're in development mode
+if os.getenv("ENVIRONMENT") != "development":
+    # Only apply Secweb in non-development environments
+    SecWeb(app=app)
+else:
+    # We're in development mode, so don't apply Secweb
+    print("Running in development mode - Secweb security headers disabled")
 
 app.state.limiter = limiter
 
